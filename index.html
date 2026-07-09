@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#176b3a">
+<title>Fairway Scores</title>
+<link rel="manifest" href="manifest.json">
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;background:#f3f6f2;color:#1b1b1b}header{background:linear-gradient(135deg,#176b3a,#0d2b18);color:#fff;text-align:center;padding:18px 12px;position:sticky;top:0;z-index:2}h1{margin:0;font-size:30px}header p{margin:4px 0 0}.wrap{max-width:850px;margin:auto;padding:12px 12px 88px}.card{background:#fff;border-radius:18px;padding:16px;margin:0 0 14px;box-shadow:0 3px 12px #0001}label{font-weight:700;display:block;margin:10px 0 5px}input,select,button{width:100%;font-size:18px;padding:13px;border-radius:12px;border:1px solid #ccc;box-sizing:border-box}input,select{margin-bottom:8px;background:#fff}button{background:#176b3a;color:#fff;border:0;font-weight:700;margin:6px 0}.secondary{background:#555}.danger{background:#a83232}.blue{background:#245c99}.hidden{display:none!important}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.score-row{display:grid;grid-template-columns:1fr 52px 68px 52px;gap:8px;align-items:center;margin:10px 0}.score-row button{height:52px;padding:0;font-size:26px;margin:0}.score-value{text-align:center;font-size:27px;font-weight:800;background:#eef3ee;border-radius:12px;padding:10px 0}.name{font-weight:800}.pill{display:inline-block;background:#e8f3ec;border-radius:999px;padding:6px 10px;font-weight:700;margin:3px}.muted{color:#666;font-size:14px}.tip{background:#eef6ff;border-left:5px solid #245c99;border-radius:12px;padding:12px;margin-top:10px}table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px solid #e2e2e2;padding:8px;text-align:center}th:first-child,td:first-child{text-align:left}th{background:#ecf3ee}.leader{font-size:20px;font-weight:900}.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:7px;z-index:3}.bottom button{font-size:13px;padding:9px 3px;margin:0;border-radius:10px}@media(max-width:520px){.wrap{padding:10px 10px 88px}.score-row{grid-template-columns:1fr 48px 60px 48px}.score-row button{width:48px}.score-value{font-size:24px}table{font-size:13px}}
+</style>
+</head>
+<body>
+<header><h1>Fairway Scores</h1><p>Simple golf scoring for mates</p></header>
+<div class="wrap">
+<section id="home" class="card">
+<h2>Start a Round</h2>
+<label>Course</label><select id="courseSelect" onchange="courseChanged()"><option>Marri Park</option><option>Custom course</option></select>
+<input id="courseName" value="Marri Park" placeholder="Course name">
+<label>Holes</label><select id="holeCount"><option value="18">18 holes</option><option value="9">9 holes</option></select>
+<h3>Players</h3>
+<input id="player1" value="Billy" placeholder="Player 1"><input id="player2" placeholder="Player 2"><input id="player3" placeholder="Player 3"><input id="player4" placeholder="Player 4">
+<button onclick="startRound()">Start Round</button><button class="secondary" onclick="showHistory()">Previous Rounds</button>
+<div class="tip"><b>iPhone:</b><div class="muted">When this is published, open the web address in Safari, tap Share, then Add to Home Screen.</div></div>
+</section>
+<section id="score" class="card hidden"><h2 id="holeTitle"></h2><div id="holeInfo"></div><div id="scoreInputs"></div><button class="blue" onclick="startVoice()">🎤 Speak scores</button><div id="voiceResult" class="muted"></div><div class="grid2"><button class="secondary" onclick="previousHole()">Back</button><button onclick="nextHole()">Next</button></div><button class="secondary" onclick="showSummary()">Summary</button><button class="danger" onclick="saveAndFinish()">Save & Finish</button></section>
+<section id="summary" class="card hidden"><h2>Summary</h2><div id="leaderBox"></div><div id="summaryContent"></div><button onclick="backToScoring()">Back to Scoring</button><button class="danger" onclick="saveAndFinish()">Save & Finish</button></section>
+<section id="history" class="card hidden"><h2>Previous Rounds</h2><div id="historyContent"></div><button class="secondary" onclick="showHome()">Back</button></section>
+<section id="settings" class="card hidden"><h2>Next Upgrades</h2><p>This first version does stroke scoring. Next we can add:</p><span class="pill">Stableford</span><span class="pill">Handicaps</span><span class="pill">Stroke index</span><span class="pill">Excel export</span><span class="pill">Club leaderboard</span><p class="muted">Voice input depends on browser support. Chrome usually works best. Safari support can vary.</p></section>
+</div>
+<nav class="bottom"><button onclick="showHome()">Home</button><button onclick="round?showScoreScreen():showHome()">Score</button><button onclick="round?showSummary():showHome()">Summary</button><button onclick="showHistory()">History</button></nav>
+<script>
+const marriPark=[{par:4,si:7},{par:4,si:3},{par:3,si:17},{par:5,si:1},{par:4,si:11},{par:4,si:5},{par:3,si:15},{par:5,si:9},{par:4,si:13},{par:4,si:8},{par:5,si:2},{par:3,si:18},{par:4,si:6},{par:4,si:12},{par:5,si:4},{par:3,si:16},{par:4,si:10},{par:4,si:14}];
+let round=null,currentHole=1;
+function q(id){return document.getElementById(id)}
+function courseChanged(){q('courseName').value=q('courseSelect').value==='Custom course'?'':q('courseSelect').value}
+function hideAll(){['home','score','summary','history','settings'].forEach(id=>q(id).classList.add('hidden'))}
+function showHome(){hideAll();q('home').classList.remove('hidden')}
+function startRound(){const players=[q('player1').value,q('player2').value,q('player3').value,q('player4').value].map(x=>x.trim()).filter(Boolean);if(!players.length){alert('Add at least one player.');return}const holes=+q('holeCount').value,course=q('courseName').value.trim()||'Golf Course';round={course,date:new Date().toLocaleString(),holes,players,courseData:course==='Marri Park'?marriPark.slice(0,holes):Array.from({length:holes},()=>({par:'-',si:'-'})),scores:{}};for(let h=1;h<=holes;h++){round.scores[h]={};players.forEach(p=>round.scores[h][p]=0)}currentHole=1;showScoreScreen()}
+function showScoreScreen(){if(!round)return showHome();hideAll();q('score').classList.remove('hidden');renderHole()}
+function renderHole(){const d=round.courseData[currentHole-1]||{par:'-',si:'-'};q('holeTitle').innerText=`${round.course} - Hole ${currentHole} of ${round.holes}`;q('holeInfo').innerHTML=`<span class=pill>Par ${d.par}</span><span class=pill>Index ${d.si}</span>`;q('scoreInputs').innerHTML='';round.players.forEach(p=>{const r=document.createElement('div');r.className='score-row';r.innerHTML=`<div class=name>${p}</div><button>−</button><div class=score-value>${round.scores[currentHole][p]}</div><button>+</button>`;r.children[1].onclick=()=>changeScore(p,-1);r.children[3].onclick=()=>changeScore(p,1);q('scoreInputs').appendChild(r)})}
+function changeScore(p,a){round.scores[currentHole][p]=Math.max(0,round.scores[currentHole][p]+a);renderHole()}
+function nextHole(){currentHole<round.holes?(currentHole++,renderHole()):showSummary()}
+function previousHole(){if(currentHole>1){currentHole--;renderHole()}}
+function totals(){return round.players.map(p=>{let front=0,back=0;for(let h=1;h<=round.holes;h++){let s=round.scores[h][p]||0;if(h<=9)front+=s;else back+=s}return{player:p,front,back,total:front+back}})}
+function showSummary(){if(!round)return showHome();hideAll();q('summary').classList.remove('hidden');const rows=totals().sort((a,b)=>a.total-b.total),lead=rows[0];q('leaderBox').innerHTML=lead?`<p class=leader>Leader: ${lead.player} — ${lead.total}</p>`:'';let html=`<p><b>${round.course}</b><br>${round.date}</p><table><thead><tr><th>Player</th><th>Front</th><th>Back</th><th>Total</th></tr></thead><tbody>`;rows.forEach(r=>html+=`<tr><td>${r.player}</td><td>${r.front}</td><td>${round.holes>9?r.back:'-'}</td><td><b>${r.total}</b></td></tr>`);html+='</tbody></table><h3>Hole by Hole</h3><table><thead><tr><th>Hole</th><th>Par</th>';round.players.forEach(p=>html+=`<th>${p}</th>`);html+='</tr></thead><tbody>';for(let h=1;h<=round.holes;h++){html+=`<tr><td>${h}</td><td>${round.courseData[h-1]?.par??'-'}</td>`;round.players.forEach(p=>html+=`<td>${round.scores[h][p]}</td>`);html+='</tr>'}q('summaryContent').innerHTML=html+'</tbody></table>'}
+function backToScoring(){showScoreScreen()}
+function saveAndFinish(){if(!round)return;if(!confirm('Save this round?'))return;const saved=JSON.parse(localStorage.getItem('fairwayScoresRounds')||'[]');saved.unshift(round);localStorage.setItem('fairwayScoresRounds',JSON.stringify(saved));alert('Round saved.');round=null;currentHole=1;showHome()}
+function showHistory(){hideAll();q('history').classList.remove('hidden');const saved=JSON.parse(localStorage.getItem('fairwayScoresRounds')||'[]'),box=q('historyContent');if(!saved.length){box.innerHTML='<p>No saved rounds yet.</p>';return}let html='';saved.forEach((r,i)=>{let rows=r.players.map(p=>{let t=0;for(let h=1;h<=r.holes;h++)t+=r.scores[h][p]||0;return{p,t}}).sort((a,b)=>a.t-b.t);html+=`<div class=card><h3>${r.course}</h3><p class=muted>${r.date}</p><table><thead><tr><th>Player</th><th>Total</th></tr></thead><tbody>`;rows.forEach(s=>html+=`<tr><td>${s.p}</td><td>${s.t}</td></tr>`);html+=`</tbody></table><button class=danger onclick=deleteRound(${i})>Delete</button></div>`});box.innerHTML=html}
+function deleteRound(i){if(!confirm('Delete this round?'))return;const saved=JSON.parse(localStorage.getItem('fairwayScoresRounds')||'[]');saved.splice(i,1);localStorage.setItem('fairwayScoresRounds',JSON.stringify(saved));showHistory()}
+function wordToNumber(w){return{zero:0,one:1,two:2,three:3,four:4,for:4,five:5,six:6,seven:7,eight:8,ate:8,nine:9,ten:10,eleven:11,twelve:12}[w.toLowerCase()]}
+function startVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){q('voiceResult').innerText='Voice input is not supported by this browser. Use the buttons.';return}const rec=new SR();rec.lang='en-AU';rec.interimResults=false;q('voiceResult').innerText='Listening... say: Billy 5 John 4 Dave 6';rec.start();rec.onresult=e=>{const text=e.results[0][0].transcript;q('voiceResult').innerText='Heard: '+text;applyVoiceScores(text)};rec.onerror=()=>q('voiceResult').innerText='Voice failed. Use the buttons.'}
+function applyVoiceScores(text){const lower=text.toLowerCase();round.players.forEach(p=>{const i=lower.indexOf(p.toLowerCase());if(i>=0){const after=lower.slice(i+p.length).trim().split(/\s+/).slice(0,3);for(const tok of after){const c=tok.replace(/[^a-z0-9]/g,'');const n=/^\d+$/.test(c)?+c:wordToNumber(c);if(Number.isInteger(n)){round.scores[currentHole][p]=n;break}}}});renderHole()}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+</script>
+</body>
+</html>
